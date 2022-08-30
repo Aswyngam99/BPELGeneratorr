@@ -1,18 +1,22 @@
 <template>
-  <div class="home">
-    <img alt="Vue logo" src="../assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
-  </div>
+<div>
+  <h1>BPEL Generator</h1>
+  <v-btn> Sequence Activity </v-btn>
+</div>
+
 </template>
 
 <script>
-// @ is an alias to /src
-import HelloWorld from '@/components/HelloWorld.vue'
+  export default {
+    data(){
 
-export default {
-  name: 'HomeView',
-  components: {
-    HelloWorld
+    },
+    methods(){
+      GenStr: function()
+      {
+         console.log('Lol')
+      }
+    }
+
   }
-}
 </script>
