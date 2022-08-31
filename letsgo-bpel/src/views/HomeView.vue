@@ -1,41 +1,51 @@
 <template>
   <div>
     <h1>BPEL Generation</h1>
+      <v-btn @click="Addd('sequence') ,AddNewAct('Activity sequence created','test')">Sequence</v-btn>
 
-      <v-btn @click="GenStr('process','sequence','phase1'), AddNewAct('Activity sequence created','phase1')">Sequence</v-btn>
-      <v-btn @click="GenStr('process','flow','phase1'), AddNewAct('Activity flow created','phase2')">Flow</v-btn>
-      <v-btn id="g">Get</v-btn>
-      <v-btn id="p">Put</v-btn>
-      <v-btn id="po">Post</v-btn>
-      <v-btn id="d">Delete</v-btn>  
+      <v-btn @click="Addd('flow'), AddNewAct('Activity flow created','test')">Flow</v-btn>
+
+      <v-btn @click="Addd('get'), AddNewAct('Activity Get created','test')">Get</v-btn>
+      <v-btn @click="Addd('put'), AddNewAct('Activity Put created','test')">Put</v-btn>
+      <v-btn @click="Addd('post'), AddNewAct('Activity Post created','test')">Post</v-btn>
+      <v-btn @click="Addd('delete'), AddNewAct('Activity Delete created','test')">Delete</v-btn>  
+
+      <v-btn @click="dialog2 = !dialog2">If</v-btn>
+    
+      <v-dialog v-model="dialog2" max-width="500px">
+        <v-card>
+          <v-card-text>
+          <h1 class="pa-4">Condition</h1>
+          <v-text-field v-model="conditionIF" color="#673AB7" label="Condition" placeholder="Type a condition here ... " class="mt-8" outlined dense></v-text-field>
+          <!-- <span>value: {{ conditionIF }}</span> -->
+          <span class="red--text">* Could be a boolean or an expression</span>
+          </v-card-text>
+          <v-card-actions>
+          <v-spacer></v-spacer>
+          <!-- ajouter une regex pour la condition -->
+          <v-btn color="primary" @click="dialog2 = false, Addd('if'), AddNewAct('Activity if created','test')" >Submit</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+      <v-btn @click="FileCreation()">Creer le fichier BPEL</v-btn>
       <v-list two-line >
          <v-list-item v-for="(Act,index) in ActList" :key="Act.id">
+           <template v-slot:default="{ active }">
+            <v-list-item-action>
+              <v-checkbox :input-value="active"></v-checkbox>
+            </v-list-item-action>
             <v-list-item-content>
                <v-list-item-title>{{Act.id}} - {{Act.title}} : {{Act.name}}</v-list-item-title>
                <v-btn text @click="deleteFromList(index)">
                 <v-icon color="red"> mdi-delete-circle-outline </v-icon>
               </v-btn>
             </v-list-item-content>
+              </template>
          </v-list-item>
       </v-list>
-  
-    <v-btn @click="dialog2 = !dialog2">If</v-btn>
+
     
-    <v-dialog v-model="dialog2" max-width="500px">
-      <v-card>
-        <v-card-text>
-        <h1 class="pa-4">Condition</h1>
-        <v-text-field v-model="conditionIF" color="#673AB7" label="Condition" placeholder="Type a condition here ... " class="mt-8" outlined dense></v-text-field>
-        <!-- <span>value: {{ conditionIF }}</span> -->
-        <span class="red--text">* Could be a boolean or an expression</span>
-        </v-card-text>
-        <v-card-actions>
-        <v-spacer></v-spacer>
-        <!-- ajouter une regex pour la condition -->
-        <v-btn color="primary" @click="dialog2 = false, GenIf('if',conditionIF)" >Submit</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
   </div>
 </template>
 
@@ -48,18 +58,28 @@
           name: 'test',
           ParentActivity: '',
           ActivityType: ['sequence','flow','get','put','post','delete','if','ifelse'],
-          ActList: [{id: 1,title: 'Activity process created',name:'fabrication'}],
+          ActList: [{id: 1,title: 'Activity process created',name:'fabrication',Activity: 'process'}],
           newText: '',
-          nextId: 2
+          nextId: 2,
+          arr: [{nb: 1, Activity: 'process'}],
+          nextNb: 2
         }
       },
       methods: {
+      //Create array of activities---------
+      Addd: function(Act){
+        this.arr.push({
+          nb: this.nextNb++,
+          Activity: Act,
+        })
+
+      },
       //Add to hierarchy------------------
       AddNewAct: function(text, n){
          this.ActList.push({
         id: this.nextId++,
         title: text,
-        name: n
+        name: n,
       })
       this.newText = '';
       },
@@ -67,62 +87,124 @@
       deleteFromList: function(index) {
       this.ActList.splice(index, 1);
     },
-      //Creation document
-      DocCreate: function(document,Parent){
-          var serializer = new XMLSerializer();
-          document.appendChild(Parent);
-          var xmlString = serializer.serializeToString(document);
-          console.log(xmlString);
-      },
-      //SEQUENCE/FLOW----------------------------------------------------
-        GenStr: function(ParentActivity,ActivityType,name){
-          
-          var doc = document.implementation.createDocument("", "", null);
-          var Parent= doc.createElement(ParentActivity);
-          
-          const pi = doc.createProcessingInstruction('xml', 'version="1.0" encoding="UTF-8"');
-          doc.insertBefore(pi, doc.firstChild);
-          
-          switch(ActivityType) {
-            case 'sequence':
-              // create sequence
-            var sequence = doc.createElement("sequence");
-            sequence.setAttribute("name", name);
-            sequence.setAttribute("DD", "");
-            sequence.setAttribute("DF", "");
-            sequence.setAttribute("DUR", "");
-            sequence.setAttribute("CD", "");
-            sequence.setAttribute("CF", "");
-            sequence.setAttribute("TC", "");
-            sequence.setAttribute("InstantDebut", "");
-            Parent.appendChild(sequence);
-            break;
-            case 'flow':
-              // create flow
-            var flow = doc.createElement("flow");
-            flow.setAttribute("name", name);
-            flow.setAttribute("DD", "");
-            flow.setAttribute("DF", "");
-            flow.setAttribute("DUR", "");
-            flow.setAttribute("CD", "");
-            flow.setAttribute("CF", "");
-            flow.setAttribute("TC", "");
-            flow.setAttribute("InstantDebut", "");
-            Parent.appendChild(flow);
-            break;
-          }
-          this.DocCreate(doc,Parent);
         /*var FileSaver = require('file-saver');
         var blob = new Blob([xmlString], {type: "text/xml"});
         FileSaver.saveAs(blob, "test.xml");*/
+        
+    //Creation du fichier ------------------------------------------------
+        FileCreation: function(){
+          var serializer = new XMLSerializer();
+          var doc = document.implementation.createDocument("", "", null);
+          const pi = doc.createProcessingInstruction('xml', 'version="1.0" encoding="UTF-8"');
+          doc.insertBefore(pi, doc.firstChild);
+          var root = doc.createElement('process');
+          for(var i=1; i < this.arr.length; i++){
+                        console.log(this.arr[i].Activity);
+          }
+          
+          for(var i=0; i < this.arr.length; i++){
+
+            if(this.arr[i].Activity == 'sequence'){
+              var activite = this.GenStr('sequence','test');
+              root.appendChild(activite);
+              const index = this.arr.indexOf('sequence');
+               if (index > -1) { 
+                this.arr.splice(index, 1); 
+                }
+            };
+            if(this.arr[i].Activity == 'flow'){
+              var activite = this.GenStr('flow','test');
+              root.appendChild(activite);
+              const index = this.arr.indexOf('flow');
+               if (index > -1) { 
+                this.arr.splice(index, 1); 
+                }
+              //activite.nextSibling;
+              
+            };
+            if(this.arr[i].Activity == 'get'){
+              var subactivite = this.GenCom('get','test');
+              root.appendChild(subactivite);
+              const index = this.arr.indexOf('get');
+               if (index > -1) { 
+                this.arr.splice(index, 1); 
+                }
+              
+            };
+             if(this.arr[i].Activity == 'put'){
+              var subactivite = this.GenCom('put','test');
+              root.appendChild(subactivite);
+              const index = this.arr.indexOf('put');
+               if (index > -1) { 
+                this.arr.splice(index, 1); 
+                }
+              
+            };
+             if(this.arr[i].Activity == 'post'){
+              var subactivite = this.GenCom('post','test');
+              root.appendChild(subactivite);
+              const index = this.arr.indexOf('post');
+               if (index > -1) { 
+                this.arr.splice(index, 1); 
+                }
+              
+            };
+             if(this.arr[i].Activity == 'delete'){
+              var subactivite = this.GenCom('delete','test');
+              root.appendChild(subactivite);
+              const index = this.arr.indexOf('delete');
+               if (index > -1) { 
+                this.arr.splice(index, 1); 
+                }
+            };
+             if(this.arr[i].Activity == 'if'){
+              var subactivite = this.GenIf('if','test');
+              root.appendChild(subactivite);
+              const index = this.arr.indexOf('if');
+               if (index > -1) { 
+                this.arr.splice(index, 1); 
+                }
+              
+            };
+            //this.arr.splice(i,1);
+          }
+          this.arr[i] = [{nb: 1, Activity: 'process'}];
+          doc.appendChild(root);
+          //Afficher le document dans la console------------
+          var xmlString = serializer.serializeToString(doc);
+          console.log(xmlString);
         },
-        /*BPEL FILE CREATION*/
-        CreateScenario() {
-          console.log('?');
-          // 2 possibilities -------------------------
-          // 1 - imbrique ----------------------------
-          // 2 - non imbrique ------------------------
-        },
+         //SEQUENCE/FLOW----------------------------------------------------
+        GenStr: function(ActivityType,name){
+          var doc = document.implementation.createDocument("", "", null);
+          switch(ActivityType) {
+            case 'sequence':
+              // create sequence
+            var tmp = doc.createElement("sequence");
+            tmp.setAttribute("name", name);
+            tmp.setAttribute("DD", "");
+            tmp.setAttribute("DF", "");
+            tmp.setAttribute("DUR", "");
+            tmp.setAttribute("CD", "");
+            tmp.setAttribute("CF", "");
+            tmp.setAttribute("TC", "");
+            tmp.setAttribute("InstantDebut", "");
+            break;
+            case 'flow':
+              // create flow
+            var tmp = doc.createElement("flow");
+            tmp.setAttribute("name", name);
+            tmp.setAttribute("DD", "");
+            tmp.setAttribute("DF", "");
+            tmp.setAttribute("DUR", "");
+            tmp.setAttribute("CD", "");
+            tmp.setAttribute("CF", "");
+            tmp.setAttribute("TC", "");
+            tmp.setAttribute("InstantDebut", "");
+            break;
+          }
+            return tmp;
+          },
         //GET,POST,PUT,DELETE-------------------------------------------------
         GenCom: function(ActivityType, name){
           var serializer = new XMLSerializer();
@@ -135,52 +217,50 @@
           switch(ActivityType) {
             case 'get':
               // create get
-            var get = doc.createElement("get");
-            get.setAttribute("name", name);
-            get.setAttribute("uri", "");
-            get.setAttribute("DD", "");
-            get.setAttribute("DF", "");
-            get.setAttribute("DUR", "");
-            get.setAttribute("InstantDebut", "");
-            extensionActivity.appendChild(get);
+            var tmp = doc.createElement("get");
+            tmp.setAttribute("name", name);
+            tmp.setAttribute("uri", "");
+            tmp.setAttribute("DD", "");
+            tmp.setAttribute("DF", "");
+            tmp.setAttribute("DUR", "");
+            tmp.setAttribute("InstantDebut", "");
+            extensionActivity.appendChild(tmp);
             break;
             case 'put':
               // create put
-            var put = doc.createElement("put");
-            put.setAttribute("name", name);
-            put.setAttribute("uri", "");
-            put.setAttribute("DD", "");
-            put.setAttribute("DF", "");
-            put.setAttribute("DUR", "");
-            put.setAttribute("InstantDebut", "");
-            extensionActivity.appendChild(put);
+            var tmp = doc.createElement("put");
+            tmp.setAttribute("name", name);
+            tmp.setAttribute("uri", "");
+            tmp.setAttribute("DD", "");
+            tmp.setAttribute("DF", "");
+            tmp.setAttribute("DUR", "");
+            tmp.setAttribute("InstantDebut", "");
+            extensionActivity.appendChild(tmp);
             break;
             case 'post':
               // create post
-            var post = doc.createElement("post");
-            post.setAttribute("name", name);
-            post.setAttribute("uri", "");
-            post.setAttribute("DD", "");
-            post.setAttribute("DF", "");
-            post.setAttribute("DUR", "");
-            post.setAttribute("InstantDebut", "");
-            extensionActivity.appendChild(post);
+            var tmp = doc.createElement("post");
+            tmp.setAttribute("name", name);
+            tmp.setAttribute("uri", "");
+            tmp.setAttribute("DD", "");
+            tmp.setAttribute("DF", "");
+            tmp.setAttribute("DUR", "");
+            tmp.setAttribute("InstantDebut", "");
+            extensionActivity.appendChild(tmp);
             break;
             case 'delete':
               // create delete
-            var deletee = doc.createElement("delete");
-            deletee.setAttribute("name", name);
-            deletee.setAttribute("uri", "");
-            deletee.setAttribute("DD", "");
-            deletee.setAttribute("DF", "");
-            deletee.setAttribute("DUR", "");
-            deletee.setAttribute("InstantDebut", "");
-            extensionActivity.appendChild(deletee);
+            var tmp = doc.createElement("delete");
+            tmp.setAttribute("name", name);
+            tmp.setAttribute("uri", "");
+            tmp.setAttribute("DD", "");
+            tmp.setAttribute("DF", "");
+            tmp.setAttribute("DUR", "");
+            tmp.setAttribute("InstantDebut", "");
+            extensionActivity.appendChild(tmp);
             break;
           }
-        doc.appendChild(extensionActivity);
-        var xmlString = serializer.serializeToString(doc);
-        console.log(xmlString);
+        return extensionActivity;
         },
 
         //IF ELSE-------------------------------------------------
@@ -197,15 +277,18 @@
           var conditionif = doc.createTextNode(conditionIF);
           ifcondition.appendChild(conditionif);
           iff.appendChild(ifcondition);
+          
           if(ActivityType == 'ifelse'){
             var elsee = doc.createElement('else');
             iff.appendChild(elsee);
           }
-          process.appendChild(iff);
-          doc.appendChild(process);
-          var xmlString = serializer.serializeToString(doc);
-          console.log(xmlString);
+          //process.appendChild(iff);
+          //doc.appendChild(process);
+          //var xmlString = serializer.serializeToString(doc);
+          //console.log(xmlString);
+          return iff;
         }
       }
+      //BOUCLE WHILE -------------------------------
   }
 </script>
